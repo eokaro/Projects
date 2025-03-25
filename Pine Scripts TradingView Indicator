@@ -1,0 +1,42 @@
+//@version=5
+strategy("EMA + RSI + Volume with 3-Min High", overlay=true)
+
+// Define EMAs
+ema9 = ta.ema(close, 9)
+ema20 = ta.ema(close, 20)
+
+// Define RSI
+rsi = ta.rsi(close, 14)
+
+// Define Volume conditions: high volume is when current volume exceeds 120% of the 20-bar average
+vol_avg = ta.sma(volume, 20)
+high_vol = volume > vol_avg * 1.2
+
+// Define 3-Minute High Condition: current bar's high equals the highest high of the last 3 bars
+threeMinHigh = high == ta.highest(high, 3)
+
+// Buy Condition:
+// 1. 9 EMA crossing above 20 EMA (bullish crossover)
+// 2. RSI above 50
+// 3. High volume confirmation
+// 4. Current bar is at a new 3-min high
+buy_condition = ta.crossover(ema9, ema20) and (rsi > 50) and high_vol and threeMinHigh
+
+// Sell Condition:
+// Using a bearish EMA crossover, RSI below 50, and high volume as confirmation
+sell_condition = ta.crossunder(ema9, ema20) and (rsi < 50) and high_vol
+
+// Execute trades
+strategy.entry("Buy", strategy.long, when=buy_condition)
+strategy.close("Buy", when=sell_condition)
+
+// Plot EMAs for visual reference
+plot(ema9, title="9 EMA", color=color.blue)
+plot(ema20, title="20 EMA", color=color.red)
+
+// Plot RSI 50-level for clarity
+hline(50, "RSI 50 Level", color=color.gray)
+
+// Set alerts for TradingView notifications
+alertcondition(buy_condition, title="Buy Alert", message="Buy Signal Triggered: EMA crossover, RSI > 50, High Volume, and 3-Min High")
+alertcondition(sell_condition, title="Sell Alert", message="Sell Signal Triggered: EMA crossunder, RSI < 50, and High Volume")
